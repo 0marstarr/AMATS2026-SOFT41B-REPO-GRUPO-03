@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Biblioteca - ITCA FEPADE Santa Ana</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f6f9; }
+    header { background-color: #003366; color: white; padding: 15px 20px; border-radius: 5px; }
+    .container { margin-top: 20px; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .search-box { margin-bottom: 20px; }
+    input[type="text"], select { padding: 8px; margin-right: 10px; width: 250px; }
+    button { padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .badge { padding: 5px 10px; border-radius: 12px; color: white; font-size: 12px; }
+    .badge-tecnico { background-color: #007bff; }
+    .badge-disponible { background-color: #28a745; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>Biblioteca ITCA-FEPADE Santa Ana</h2>
+    <p>Gestión y Registro Unificado de Préstamos</p>
+  </header>
+
+  <div class="container">
+    <h3>Consulta y Registro de Usuarios</h3>
+    <div class="search-box">
+      <input type="text" placeholder="Buscar por carnet o código...">
+      <select>
+        <option value="">Todos los tipos de usuario</option>
+        <option value="tecnico">Estudiante Carrera Técnica</option>
+        <option value="curso">Estudiante de Curso Libre</option>
+        <option value="administrativo">Personal Administrativo</option>
+      </select>
+      <button>Buscar</button>
+    </div>
+
+    <h3>Catálogo de Libros Disponibles</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Título del Libro</th>
+          <th>Autor</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LIB-001</td>
+          <td>Ingeniería de Software: Un Enfoque Práctico</td>
+          <td>Roger S. Pressman</td>
+          <td><span class="badge badge-disponible">3 Copias en estante</span></td>
+          <td><button style="background-color: #007bff;">Prestar</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
