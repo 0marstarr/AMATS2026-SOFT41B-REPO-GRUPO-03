@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Panel de pruebas para el API de usuarios y libros del Sistema de Biblioteca.">
+  <title>Sistema de Biblioteca · Panel de pruebas</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__inner">
+      <div class="hero__brand">
+        <span class="hero__mark" aria-hidden="true">B</span>
+        <div>
+          <p class="hero__eyebrow">ITCA FEPADE · Santa Ana</p>
+          <h1>Sistema de Biblioteca</h1>
+          <p class="hero__subtitle">Panel de pruebas · Tareas 1.3 y 3.4</p>
+        </div>
+      </div>
+      <span id="api-status" class="status status--pending">
+        <span class="status__dot" aria-hidden="true"></span>
+        <span id="api-status-text">Comprobando API…</span>
+      </span>
+    </div>
+  </header>
+
+  <main class="page">
+    <nav class="tabs" role="tablist" aria-label="Módulos del sistema">
+      <button class="tab is-active" id="tab-libros" data-panel="panel-libros" role="tab" aria-selected="true" aria-controls="panel-libros">Libros</button>
+      <button class="tab" id="tab-usuarios" data-panel="panel-usuarios" role="tab" aria-selected="false" aria-controls="panel-usuarios">Usuarios</button>
+    </nav>
+
+    <section id="panel-libros" class="panel is-active" role="tabpanel" aria-labelledby="tab-libros">
+      <div class="workspace">
+        <article class="card">
+          <header class="card__header">
+            <div>
+              <p class="card__eyebrow">Tarea 3.4</p>
+              <h2 id="libro-form-title">Nuevo libro</h2>
+            </div>
+          </header>
+
+          <form id="libro-form" class="form" autocomplete="off">
+            <input type="hidden" id="libro-id" name="id" value="">
+
+            <div class="field field--full">
+              <label for="libro-codigo">Código <span class="required">*</span></label>
+              <input id="libro-codigo" name="codigo" type="text" maxlength="30" placeholder="LIB-001" required>
+            </div>
+
+            <div class="field field--full">
+              <label for="libro-titulo">Título <span class="required">*</span></label>
+              <input id="libro-titulo" name="titulo" type="text" maxlength="200" placeholder="Ingeniería de Software" required>
+            </div>
+
+            <div class="field field--full">
+              <label for="libro-autor">Autor <span class="required">*</span></label>
+              <input id="libro-autor" name="autor" type="text" maxlength="150" placeholder="Roger S. Pressman" required>
+            </div>
+
+            <div class="field">
+              <label for="libro-editorial">Editorial</label>
+              <input id="libro-editorial" name="editorial" type="text" maxlength="150" placeholder="McGraw-Hill">
+            </div>
+
+            <div class="field">
+              <label for="libro-anio">Año</label>
+              <input id="libro-anio" name="anio" type="number" min="1400" placeholder="2020">
+            </div>
+
+            <div class="field">
+              <label for="libro-ejemplares">Ejemplares <span class="required">*</span></label>
+              <input id="libro-ejemplares" name="ejemplares" type="number" min="1" value="1" required>
+            </div>
+
+            <div class="field">
+              <label for="libro-disponibles">Disponibles <span class="required">*</span></label>
+              <input id="libro-disponibles" name="disponibles" type="number" min="0" value="1" required>
+              <small>No puede superar el total de ejemplares.</small>
+            </div>
+
+            <div class="form__actions field--full">
+              <button id="libro-submit" type="submit" class="btn btn--primary">Guardar libro</button>
+              <button id="libro-cancel" type="button" class="btn btn--ghost" hidden>Cancelar edición</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card card--table">
+          <header class="card__header">
+            <div>
+              <p class="card__eyebrow">Catálogo</p>
+              <h2>Libros registrados <span id="libros-count" class="count">0</span></h2>
+            </div>
+            <button id="btn-refresh" type="button" class="btn btn--ghost btn--small">Actualizar</button>
+          </header>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Título</th>
+                  <th>Autor</th>
+                  <th>Año</th>
+                  <th>Ejemplares</th>
+                  <th>Disponibles</th>
+                  <th class="table__actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="libros-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="panel-usuarios" class="panel" role="tabpanel" aria-labelledby="tab-usuarios">
+      <div class="workspace workspace--single">
+        <article class="card">
+          <header class="card__header">
+            <div>
+              <p class="card__eyebrow">Tarea 1.3</p>
+              <h2>Registrar usuario</h2>
+            </div>
+          </header>
+
+          <form id="usuario-form" class="form" autocomplete="off">
+            <div class="field field--full">
+              <label for="usuario-nombre">Nombre completo <span class="required">*</span></label>
+              <input id="usuario-nombre" name="nombre" type="text" maxlength="100" placeholder="Ana María López" required>
+            </div>
+
+            <div class="field field--full">
+              <label for="usuario-correo">Correo electrónico <span class="required">*</span></label>
+              <input id="usuario-correo" name="correo" type="email" maxlength="150" placeholder="ana@itca.edu.sv" required>
+            </div>
+
+            <div class="field">
+              <label for="usuario-contrasena">Contraseña <span class="required">*</span></label>
+              <input id="usuario-contrasena" name="contrasena" type="password" minlength="6" maxlength="72" placeholder="Mínimo 6 caracteres" required>
+            </div>
+
+            <div class="field">
+              <label for="usuario-rol">Rol</label>
+              <select id="usuario-rol" name="rol">
+                <option value="estudiante">Estudiante</option>
+                <option value="bibliotecario">Bibliotecario</option>
+                <option value="administrador">Administrador</option>
+              </select>
+            </div>
+
+            <div class="form__actions field--full">
+              <button type="submit" class="btn btn--primary">Registrar usuario</button>
+              <button type="reset" class="btn btn--ghost">Limpiar</button>
+            </div>
+          </form>
+
+          <div class="result">
+            <p class="result__title">Respuesta del API</p>
+            <pre id="usuario-result" class="result__body" hidden></pre>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Grupo 03 · SOFT41B · AMACCS 2026</p>
+    <p>API en PHP 8 · SQLite local / MariaDB para el sprint 2</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
