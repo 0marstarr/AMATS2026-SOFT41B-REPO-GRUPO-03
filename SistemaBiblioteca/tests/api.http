@@ -1,0 +1,159 @@
+# =====================================================================
+# Pruebas del API · Tareas 1.3 y 3.4
+# Extensión recomendada: REST Client (VS Code)
+#
+# Antes de ejecutar:
+#   1. Importar database/schema.sql y, opcionalmente, database/seed.sql.
+#   2. Levantar el servidor: php -S localhost:8000
+#   3. Ajustar @libroId si el libro creado recibe otro id.
+#   4. Los códigos LIB-010 y los correos son fijos: si repites las pruebas,
+#      cámbialos para evitar respuestas 409.
+# =====================================================================
+
+@baseUrl = http://localhost:8000
+@libroId = 1
+
+# ---------------------------------------------------------------------
+# TAREA 1.3 · USUARIOS
+# ---------------------------------------------------------------------
+
+### 1.3 · Crear usuario (espera 201)
+POST {{baseUrl}}/api/usuarios.php
+Content-Type: application/json
+
+{
+  "nombre": "Ana María López",
+  "correo": "ana.lopez@itca.edu.sv",
+  "contrasena": "Secreta123",
+  "rol": "estudiante"
+}
+
+### 1.3 · Correo duplicado (espera 409)
+POST {{baseUrl}}/api/usuarios.php
+Content-Type: application/json
+
+{
+  "nombre": "Otra Persona",
+  "correo": "ana.lopez@itca.edu.sv",
+  "contrasena": "Secreta123",
+  "rol": "estudiante"
+}
+
+### 1.3 · Correo inválido (espera 422)
+POST {{baseUrl}}/api/usuarios.php
+Content-Type: application/json
+
+{
+  "nombre": "Carlos Pérez",
+  "correo": "correo-invalido",
+  "contrasena": "Secreta123",
+  "rol": "estudiante"
+}
+
+### 1.3 · Contraseña corta (espera 422)
+POST {{baseUrl}}/api/usuarios.php
+Content-Type: application/json
+
+{
+  "nombre": "Carlos Pérez",
+  "correo": "carlos@itca.edu.sv",
+  "contrasena": "123",
+  "rol": "estudiante"
+}
+
+### 1.3 · Rol inválido (espera 422)
+POST {{baseUrl}}/api/usuarios.php
+Content-Type: application/json
+
+{
+  "nombre": "Carlos Pérez",
+  "correo": "carlos@itca.edu.sv",
+  "contrasena": "Secreta123",
+  "rol": "superusuario"
+}
+
+### 1.3 · Método no permitido (espera 405)
+GET {{baseUrl}}/api/usuarios.php
+
+# ---------------------------------------------------------------------
+# TAREA 3.4 · LIBROS
+# ---------------------------------------------------------------------
+
+### 3.4 · Listar libros (espera 200)
+GET {{baseUrl}}/api/libros.php
+
+### 3.4 · Consultar un libro (espera 200)
+GET {{baseUrl}}/api/libros.php?id={{libroId}}
+
+### 3.4 · Consultar un libro inexistente (espera 404)
+GET {{baseUrl}}/api/libros.php?id=999999
+
+### 3.4 · Crear libro (espera 201)
+POST {{baseUrl}}/api/libros.php
+Content-Type: application/json
+
+{
+  "codigo": "LIB-010",
+  "titulo": "Refactoring",
+  "autor": "Martin Fowler",
+  "editorial": "Addison-Wesley",
+  "anio": 2018,
+  "ejemplares": 4,
+  "disponibles": 4
+}
+
+### 3.4 · Código duplicado (espera 409)
+POST {{baseUrl}}/api/libros.php
+Content-Type: application/json
+
+{
+  "codigo": "LIB-010",
+  "titulo": "Otro libro",
+  "autor": "Otro autor",
+  "ejemplares": 1,
+  "disponibles": 1
+}
+
+### 3.4 · Datos inválidos (espera 422)
+POST {{baseUrl}}/api/libros.php
+Content-Type: application/json
+
+{
+  "codigo": "LIB-011",
+  "titulo": "",
+  "autor": "Autor",
+  "ejemplares": 0,
+  "disponibles": 1
+}
+
+### 3.4 · Actualizar libro (espera 200)
+PUT {{baseUrl}}/api/libros.php?id={{libroId}}
+Content-Type: application/json
+
+{
+  "codigo": "LIB-001",
+  "titulo": "Ingeniería de Software: Un Enfoque Práctico",
+  "autor": "Roger S. Pressman",
+  "editorial": "McGraw-Hill",
+  "anio": 2020,
+  "ejemplares": 3,
+  "disponibles": 2
+}
+
+### 3.4 · Disponibles mayor que ejemplares (espera 422)
+PUT {{baseUrl}}/api/libros.php?id={{libroId}}
+Content-Type: application/json
+
+{
+  "codigo": "LIB-001",
+  "titulo": "Ingeniería de Software: Un Enfoque Práctico",
+  "autor": "Roger S. Pressman",
+  "ejemplares": 2,
+  "disponibles": 5
+}
+
+### 3.4 · Eliminar libro (espera 200)
+DELETE {{baseUrl}}/api/libros.php?id={{libroId}}
+
+### 3.4 · Consultar el libro eliminado (espera 404)
+GET {{baseUrl}}/api/libros.php?id={{libroId}}
