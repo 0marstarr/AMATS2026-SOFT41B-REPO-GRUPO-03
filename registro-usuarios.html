@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblioteca ITCA-FEPADE Santa Ana | Registro de usuarios</title>
+    <style>
+      :root {
+        --bg: #faf6ef;
+        --panel: #ffffff;
+        --panel-soft: #fffaf2;
+        --primary: #900024;
+        --primary-dark: #71001c;
+        --accent: #c99a2e;
+        --text: #303744;
+        --muted: #74706b;
+        --border: #eadcc4;
+        --danger: #a0182d;
+        --success: #39734f;
+        --shadow: 0 18px 40px rgba(75, 26, 30, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        font-family: Arial, Helvetica, sans-serif;
+        color: var(--text);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0 0 auto;
+        height: 9px;
+        background: linear-gradient(to bottom, var(--primary) 0 7px, var(--accent) 7px 9px);
+      }
+
+      .page {
+        width: min(1100px, 92vw);
+        margin: 38px auto;
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .toolbar .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        box-shadow: var(--shadow);
+        border: 2px solid var(--accent);
+      }
+
+      .staff-profile {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 9px 14px 9px 9px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        box-shadow: 0 5px 16px rgba(75, 26, 30, 0.06);
+      }
+
+      .staff-avatar {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .staff-details {
+        display: grid;
+        gap: 3px;
+      }
+
+      .staff-details strong {
+        color: var(--text);
+        font-size: 0.9rem;
+      }
+
+      .staff-details span {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .main-nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-button {
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 12px 16px;
+        background: transparent;
+        color: var(--muted);
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .nav-button[aria-selected="true"] {
+        color: var(--primary);
+        border-bottom-color: var(--accent);
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-top: 4px solid var(--primary);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        padding: 34px 36px 28px;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #9b7417;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.1rem);
+        line-height: 1.08;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .dot-menu {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        color: var(--primary);
+        background: var(--panel-soft);
+        font-size: 1.35rem;
+        border-color: var(--border);
+      }
+
+      form {
+        display: grid;
+        gap: 22px;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 18px 22px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      input,
+      select,
+      button {
+        font: inherit;
+      }
+
+      input,
+      select {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        padding: 13px 14px;
+        color: var(--text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(144, 0, 36, 0.12);
+      }
+
+      .inline-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+      }
+
+      button[type="submit"] {
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 14px 22px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 16px rgba(144, 0, 36, 0.2);
+        border-bottom: 3px solid var(--accent);
+      }
+
+      button[type="reset"] {
+        border: 1px solid var(--border);
+        background: var(--panel-soft);
+        color: var(--text);
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .message {
+        min-height: 24px;
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .message.success {
+        color: var(--success);
+      }
+
+      .helper-text {
+        font-size: 0.82rem;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .catalog-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .catalog-search {
+        max-width: 390px;
+      }
+
+      .primary-button,
+      .small-button,
+      .secondary-button {
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .primary-button {
+        border: 0;
+        border-bottom: 3px solid var(--accent);
+        padding: 13px 18px;
+        color: white;
+        background: var(--primary);
+      }
+
+      .small-button {
+        border: 1px solid var(--border);
+        padding: 8px 11px;
+        color: var(--primary);
+        background: #fff;
+      }
+
+      .small-button.danger {
+        color: var(--danger);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+
+      th,
+      td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+
+      th {
+        background: var(--panel-soft);
+        color: var(--primary);
+        font-size: 0.85rem;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .book-status {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: #e8f3eb;
+        color: var(--success);
+      }
+
+      .book-status.inactive {
+        background: #f8e8ea;
+        color: var(--danger);
+      }
+
+      .empty-state {
+        padding: 26px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      dialog {
+        width: min(620px, calc(100% - 32px));
+        max-height: calc(100% - 32px);
+        padding: 0;
+        border: 1px solid var(--border);
+        border-top: 5px solid var(--primary);
+        border-radius: 18px;
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+
+      dialog::backdrop {
+        background: rgba(32, 20, 22, 0.55);
+      }
+
+      .dialog-content {
+        padding: 26px;
+      }
+
+      .dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .dialog-header h2 {
+        margin: 0;
+        color: var(--primary);
+      }
+
+      .dialog-close {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .secondary-button {
+        border: 1px solid var(--border);
+        padding: 12px 16px;
+        color: var(--text);
+        background: var(--panel-soft);
+      }
+
+      @media (max-width: 760px) {
+        .card {
+          padding: 22px 18px 20px;
+        }
+
+        .card-header,
+        .toolbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .staff-profile {
+          max-width: 100%;
+        }
+
+        .staff-details strong,
+        .staff-details span {
+          overflow-wrap: anywhere;
+        }
+
+        .field-grid,
+        .inline-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .catalog-toolbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .catalog-search {
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="toolbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">B</div>
+          <div>
+            <strong>Biblioteca ITCA-FEPADE</strong><br />
+            <span class="helper-text">Santa Ana · Gestión de préstamos</span>
+          </div>
+        </div>
+        <div class="staff-profile" aria-label="Encargada de biblioteca">
+          <div class="staff-avatar" aria-hidden="true">AP</div>
+          <div class="staff-details">
+            <strong>Ada Elizabeth Pérez de Artiga</strong>
+            <span>Encargada de biblioteca</span>
+            <span>aeperez@itca.edu.sv</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Secciones de gestión">
+        <button class="nav-button" type="button" id="borrowersTab" aria-selected="true" aria-controls="borrowersView">Usuarios</button>
+        <button class="nav-button" type="button" id="booksTab" aria-selected="false" aria-controls="booksView">Catálogo de libros</button>
+      </nav>
+
+      <main class="card" id="borrowersView">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Biblioteca interna · ITCA-FEPADE Santa Ana</p>
+            <h1>Registro de usuarios</h1>
+            <p class="helper-text">Registra a las personas que solicitan préstamos. Esta información corresponde a la tabla Usuarios de la biblioteca. Demo: los datos se validan en el navegador, pero todavía no se guardan en una base de datos.</p>
+          </div>
+          <div class="header-actions">
+            <div class="dot-menu">⋮</div>
+          </div>
+        </div>
+
+        <form id="userForm" novalidate>
+          <div class="field-grid">
+            <label>
+              Nombre completo *
+              <input id="nombre" name="nombre" type="text" placeholder="Ej. Ana López" maxlength="120" autocomplete="name" required />
+            </label>
+
+            <label>
+              Correo institucional *
+              <input id="email" name="email" type="email" placeholder="usuario@itca.edu.sv" maxlength="254" autocomplete="email" required />
+            </label>
+
+            <label>
+              Tipo de usuario *
+              <select id="tipoUsuario" name="tipoUsuario">
+                <option value="">Seleccione una opción</option>
+                <option value="estudiante_tecnico">Estudiante Técnico</option>
+                <option value="cursos_libres">Cursos Libres</option>
+                <option value="personal_administrativo">Personal Administrativo</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+
+            <label>
+              Estado *
+              <select id="estadoUsuario" name="estado" required>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Carnet / Código (6 dígitos) *
+            <input id="codigoUsuario" name="carnet_codigo" type="text" placeholder="Ej. 123456" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="off" required />
+          </label>
+
+          <div class="actions">
+            <button type="submit">Registrar usuario</button>
+            <button type="reset" class="secondary">Limpiar</button>
+          </div>
+
+          <p id="formMessage" class="message" aria-live="polite"></p>
+        </form>
+      </main>
+
+      <section class="card hidden" id="booksView" aria-labelledby="booksHeading">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Inventario de biblioteca · ITCA-FEPADE Santa Ana</p>
+            <h1 id="booksHeading">Catálogo de libros</h1>
+            <p class="helper-text">Agrega títulos, actualiza sus datos o dales de baja sin eliminar su historial del catálogo.</p>
+          </div>
+        </div>
+
+        <div class="catalog-toolbar">
+          <label class="catalog-search">
+            Buscar libro
+            <input id="bookSearch" type="search" placeholder="Buscar por código, título o autor" />
+          </label>
+          <button class="primary-button" type="button" id="addBookButton">+ Agregar libro</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Categoría</th>
+                <th>Ejemplares</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="booksTableBody"></tbody>
+          </table>
+          <p class="empty-state hidden" id="emptyBooksMessage">No se encontraron libros para esta búsqueda.</p>
+        </div>
+        <p id="booksMessage" class="message" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <dialog id="bookDialog" aria-labelledby="bookDialogTitle">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Gestión de inventario</p>
+            <h2 id="bookDialogTitle">Agregar libro</h2>
+          </div>
+          <button class="dialog-close" id="closeBookDialog" type="button" aria-label="Cerrar">&times;</button>
+        </div>
+        <form id="bookForm">
+          <input id="bookId" type="hidden" />
+          <div class="field-grid">
+            <label>
+              Código del libro *
+              <input id="bookCode" name="bookCode" type="text" placeholder="Ej. LIB-001" required />
+            </label>
+            <label>
+              Título *
+              <input id="bookTitle" name="bookTitle" type="text" placeholder="Título del libro" required />
+            </label>
+            <label>
+              Autor *
+              <input id="bookAuthor" name="bookAuthor" type="text" placeholder="Nombre del autor" required />
+            </label>
+            <label>
+              Categoría
+              <input id="bookCategory" name="bookCategory" type="text" placeholder="Ej. Ingeniería" />
+            </label>
+            <label>
+              Número de ejemplares *
+              <input id="bookCopies" name="bookCopies" type="number" min="0" step="1" value="1" required />
+            </label>
+          </div>
+          <p id="bookFormMessage" class="message" aria-live="polite"></p>
+          <div class="dialog-actions">
+            <button class="secondary-button" id="cancelBookDialog" type="button">Cancelar</button>
+            <button class="primary-button" type="submit">Guardar libro</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <script>
+      const form = document.getElementById('userForm');
+      const tipoUsuario = document.getElementById('tipoUsuario');
+      const codigoUsuario = document.getElementById('codigoUsuario');
+      const formMessage = document.getElementById('formMessage');
+
+        const borrowersTab = document.getElementById('borrowersTab');
+        const booksTab = document.getElementById('booksTab');
+        const borrowersView = document.getElementById('borrowersView');
+        const booksView = document.getElementById('booksView');
+        const booksTableBody = document.getElementById('booksTableBody');
+        const emptyBooksMessage = document.getElementById('emptyBooksMessage');
+        const booksMessage = document.getElementById('booksMessage');
+        const bookDialog = document.getElementById('bookDialog');
+        const bookForm = document.getElementById('bookForm');
+        const bookFormMessage = document.getElementById('bookFormMessage');
+        const bookSearch = document.getElementById('bookSearch');
+
+        let books = [
+          { id: 1, code: 'LIB-001', title: 'Ingeniería de Software: Un Enfoque Práctico', author: 'Roger S. Pressman', category: 'Ingeniería', copies: 3, active: true },
+          { id: 2, code: 'LIB-002', title: 'Clean Code', author: 'Robert C. Martin', category: 'Informática', copies: 2, active: true },
+          { id: 3, code: 'LIB-003', title: 'Fundamentos de bases de datos', author: 'Abraham Silberschatz', category: 'Informática', copies: 1, active: false }
+        ];
+        let nextBookId = 4;
+
+        function showBooksMessage(message, type) {
+          booksMessage.textContent = message;
+          booksMessage.className = `message ${type}`;
+        }
+
+        function renderBooks() {
+          const query = bookSearch.value.trim().toLocaleLowerCase('es');
+          const filteredBooks = books.filter((book) =>
+            [book.code, book.title, book.author, book.category]
+              .some((value) => value.toLocaleLowerCase('es').includes(query))
+          );
+
+          booksTableBody.replaceChildren();
+          emptyBooksMessage.classList.toggle('hidden', filteredBooks.length > 0);
+
+          filteredBooks.forEach((book) => {
+            const row = document.createElement('tr');
+            const values = [book.code, book.title, book.author, book.category || '—', String(book.copies)];
+            values.forEach((value) => {
+              const cell = document.createElement('td');
+              cell.textContent = value;
+              row.append(cell);
+            });
+
+            const statusCell = document.createElement('td');
+            const status = document.createElement('span');
+            status.className = `book-status${book.active ? '' : ' inactive'}`;
+            status.textContent = book.active ? 'Activo' : 'Dado de baja';
+            statusCell.append(status);
+            row.append(statusCell);
+
+            const actionsCell = document.createElement('td');
+            const editButton = document.createElement('button');
+            editButton.className = 'small-button';
+            editButton.type = 'button';
+            editButton.textContent = 'Editar';
+            editButton.addEventListener('click', () => openBookDialog(book));
+            actionsCell.append(editButton);
+
+            const statusButton = document.createElement('button');
+            statusButton.className = `small-button${book.active ? ' danger' : ''}`;
+            statusButton.type = 'button';
+            statusButton.textContent = book.active ? 'Dar de baja' : 'Reactivar';
+            statusButton.setAttribute('aria-label', `${book.active ? 'Dar de baja' : 'Reactivar'} ${book.title}`);
+            statusButton.addEventListener('click', () => {
+              book.active = !book.active;
+              showBooksMessage(
+                book.active ? `El libro "${book.title}" está activo nuevamente.` : `El libro "${book.title}" fue dado de baja.`,
+                'success'
+              );
+              renderBooks();
+            });
+            actionsCell.append(statusButton);
+            row.append(actionsCell);
+            booksTableBody.append(row);
+          });
+        }
+
+        function openBookDialog(book) {
+          bookForm.reset();
+          bookFormMessage.textContent = '';
+          bookFormMessage.className = 'message';
+          document.getElementById('bookDialogTitle').textContent = book ? 'Editar libro' : 'Agregar libro';
+          document.getElementById('bookId').value = book ? String(book.id) : '';
+          document.getElementById('bookCode').value = book ? book.code : '';
+          document.getElementById('bookTitle').value = book ? book.title : '';
+          document.getElementById('bookAuthor').value = book ? book.author : '';
+          document.getElementById('bookCategory').value = book ? book.category : '';
+          document.getElementById('bookCopies').value = book ? String(book.copies) : '1';
+          bookDialog.showModal();
+          document.getElementById('bookCode').focus();
+        }
+
+        function switchView(view) {
+          const showingBooks = view === 'books';
+          borrowersView.classList.toggle('hidden', showingBooks);
+          booksView.classList.toggle('hidden', !showingBooks);
+          borrowersTab.setAttribute('aria-selected', String(!showingBooks));
+          booksTab.setAttribute('aria-selected', String(showingBooks));
+          if (showingBooks) renderBooks();
+        }
+
+        borrowersTab.addEventListener('click', () => switchView('borrowers'));
+        booksTab.addEventListener('click', () => switchView('books'));
+        bookSearch.addEventListener('input', renderBooks);
+        document.getElementById('addBookButton').addEventListener('click', () => openBookDialog(null));
+        document.getElementById('closeBookDialog').addEventListener('click', () => bookDialog.close());
+        document.getElementById('cancelBookDialog').addEventListener('click', () => bookDialog.close());
+
+        bookForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const id = document.getElementById('bookId').value;
+          const code = document.getElementById('bookCode').value.trim();
+          const title = document.getElementById('bookTitle').value.trim();
+          const author = document.getElementById('bookAuthor').value.trim();
+          const category = document.getElementById('bookCategory').value.trim();
+          const copies = Number(document.getElementById('bookCopies').value);
+          const duplicateCode = books.some((book) =>
+            book.code.toLocaleLowerCase('es') === code.toLocaleLowerCase('es') && String(book.id) !== id
+          );
+
+          if (!code || !title || !author || !Number.isInteger(copies) || copies < 0) {
+            bookFormMessage.textContent = 'Revisa los campos obligatorios y el número de ejemplares.';
+            bookFormMessage.className = 'message error';
+            return;
+          }
+
+          if (duplicateCode) {
+            bookFormMessage.textContent = 'Ya existe un libro registrado con ese código.';
+            bookFormMessage.className = 'message error';
+            return;
+          }
+
+          if (id) {
+            const book = books.find((item) => String(item.id) === id);
+            if (!book) {
+              bookFormMessage.textContent = 'No se encontró el libro que intentas editar. Cierra esta ventana e inténtalo de nuevo.';
+              bookFormMessage.className = 'message error';
+              return;
+            }
+            Object.assign(book, { code, title, author, category, copies });
+            showBooksMessage(`Se actualizaron los datos de "${title}".`, 'success');
+          } else {
+            books.push({ id: nextBookId++, code, title, author, category, copies, active: true });
+            showBooksMessage(`Se agregó "${title}" al catálogo.`, 'success');
+          }
+
+          bookDialog.close();
+          renderBooks();
+        });
+
+        renderBooks();
+
+      form.addEventListener('reset', () => {
+        setTimeout(() => {
+          formMessage.textContent = '';
+          formMessage.className = 'message';
+        }, 0);
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const nombre = document.getElementById('nombre').value.trim();
+        const emailInput = document.getElementById('email');
+        const email = emailInput.value.trim();
+        const type = tipoUsuario.value;
+        const code = codigoUsuario.value.trim();
+        const estado = document.getElementById('estadoUsuario').value;
+
+        formMessage.textContent = '';
+        formMessage.className = 'message';
+
+        if (!nombre || !type || !code || !estado) {
+          formMessage.textContent = 'Completa todos los campos obligatorios del usuario.';
+          formMessage.classList.add('error');
+          return;
+        }
+
+        if (!email) {
+          formMessage.textContent = 'El correo institucional es obligatorio.';
+          formMessage.classList.add('error');
+          return;
+        }
+
+        if (emailInput.validity.typeMismatch || !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@itca\.edu\.sv$/i.test(email)) {
+          formMessage.textContent = 'Ingresa un correo válido que termine en @itca.edu.sv.';
+          formMessage.classList.add('error');
+          return;
+        }
+
+        if (!/^\d{6}$/.test(code)) {
+          formMessage.textContent = 'El carnet o código debe contener exactamente 6 dígitos numéricos.';
+          formMessage.classList.add('error');
+          return;
+        }
+
+        formMessage.textContent = `Datos validados correctamente. Estado: ${estado.toLowerCase()}.`;
+        formMessage.classList.add('success');
+      });
+    </script>
+  </body>
+</html>

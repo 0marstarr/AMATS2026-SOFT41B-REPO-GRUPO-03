@@ -1,0 +1,22 @@
+{
+  "name": "amats2026-soft41b-repo-grupo-03",
+  "version": "1.0.0",
+  "description": "Aplicación HTML + API para pruebas con Postman/JMeter desplegada en Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "api",
+    "render",
+    "postman",
+    "jmeter",
+    "html"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
