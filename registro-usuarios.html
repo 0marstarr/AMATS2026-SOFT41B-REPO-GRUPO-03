@@ -481,12 +481,15 @@
         <div class="staff-profile" aria-label="Encargada de biblioteca">
           <div class="staff-avatar" aria-hidden="true">AP</div>
           <div class="staff-details">
-            <strong>Ada Elizabeth Pérez de Artiga</strong>
-            <span>Encargada de biblioteca</span>
-            <span>aeperez@itca.edu.sv</span>
+            <strong id="staffName">Cargando sesión…</strong>
+            <span id="staffRole">Personal autorizado</span>
+            <span id="staffUsername"></span>
           </div>
         </div>
       </div>
+      <p class="helper-text" style="text-align: right; margin: -8px 0 16px">
+        <a href="/" style="color: var(--primary); font-weight: 700">← Volver al sistema</a>
+      </p>
 
       <nav class="main-nav" aria-label="Secciones de gestión">
         <button class="nav-button" type="button" id="borrowersTab" aria-selected="true" aria-controls="borrowersView">Usuarios</button>
@@ -498,12 +501,13 @@
           <div>
             <p class="eyebrow">Biblioteca interna · ITCA-FEPADE Santa Ana</p>
             <h1>Registro de usuarios</h1>
-            <p class="helper-text">Registra a las personas que solicitan préstamos. Esta información corresponde a la tabla Usuarios de la biblioteca. Demo: los datos se validan en el navegador, pero todavía no se guardan en una base de datos.</p>
+            <p class="helper-text">Registra estudiantes de carreras técnicas, cursos libres y otras personas que solicitan préstamos. Los cambios se guardan en la base de datos local del servidor.</p>
           </div>
           <div class="header-actions">
             <div class="dot-menu">⋮</div>
           </div>
         </div>
+        <p class="message error" role="note">Acceso restringido al personal autorizado. Los registros se guardan en la base de datos local; configura respaldos antes de incorporar datos reales.</p>
 
         <form id="userForm" novalidate>
           <div class="field-grid">
@@ -513,8 +517,8 @@
             </label>
 
             <label>
-              Correo institucional *
-              <input id="email" name="email" type="email" placeholder="usuario@itca.edu.sv" maxlength="254" autocomplete="email" required />
+              Correo institucional
+              <input id="email" name="email" type="email" placeholder="usuario@itca.edu.sv (opcional)" maxlength="254" autocomplete="email" />
             </label>
 
             <label>
@@ -538,9 +542,10 @@
           </div>
 
           <label>
-            Carnet / Código (6 dígitos) *
-            <input id="codigoUsuario" name="carnet_codigo" type="text" placeholder="Ej. 123456" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="off" required />
+            Carnet / Código
+            <input id="codigoUsuario" name="carnet_codigo" type="text" placeholder="Carnet o código (opcional)" maxlength="40" autocomplete="off" />
           </label>
+          <p class="helper-text">Nombre y tipo de usuario son obligatorios. Si no tiene carnet ni correo institucional, puede registrarse con su nombre.</p>
 
           <div class="actions">
             <button type="submit">Registrar usuario</button>
@@ -549,6 +554,23 @@
 
           <p id="formMessage" class="message" aria-live="polite"></p>
         </form>
+
+        <div class="card-header" style="margin-top: 30px">
+          <div>
+            <h2 style="margin: 0; color: var(--primary)">Usuarios registrados</h2>
+            <p class="helper-text">Registros guardados en esta instalación local.</p>
+          </div>
+          <button class="small-button" type="button" id="reloadUsersButton">Actualizar lista</button>
+        </div>
+        <p id="usersMessage" class="message" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Nombre</th><th>Tipo</th><th>Carnet / Código</th><th>Correo</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
       </main>
 
       <section class="card hidden" id="booksView" aria-labelledby="booksHeading">
@@ -636,6 +658,9 @@
       const tipoUsuario = document.getElementById('tipoUsuario');
       const codigoUsuario = document.getElementById('codigoUsuario');
       const formMessage = document.getElementById('formMessage');
+      const usersTableBody = document.getElementById('usersTableBody');
+      const usersMessage = document.getElementById('usersMessage');
+      const tipoUsuarioNombre = new Map(Array.from(tipoUsuario.options, (option) => [option.value, option.textContent]));
 
         const borrowersTab = document.getElementById('borrowersTab');
         const booksTab = document.getElementById('booksTab');
@@ -798,43 +823,119 @@
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();
-        const nombre = document.getElementById('nombre').value.trim();
-        const emailInput = document.getElementById('email');
-        const email = emailInput.value.trim();
-        const type = tipoUsuario.value;
-        const code = codigoUsuario.value.trim();
-        const estado = document.getElementById('estadoUsuario').value;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const usuario = {
+          nombre: document.getElementById('nombre').value.trim(),
+          correo: document.getElementById('email').value.trim(),
+          tipo: tipoUsuario.value,
+          carnet: codigoUsuario.value.trim(),
+          estado: document.getElementById('estadoUsuario').value
+        };
 
         formMessage.textContent = '';
         formMessage.className = 'message';
 
-        if (!nombre || !type || !code || !estado) {
-          formMessage.textContent = 'Completa todos los campos obligatorios del usuario.';
+        if (!usuario.nombre || !usuario.tipo || !usuario.estado) {
+          formMessage.textContent = 'Completa el nombre, tipo y estado del usuario.';
+          formMessage.classList.add('error');
+          return;
+        }
+        if (usuario.correo && !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@itca\.edu\.sv$/i.test(usuario.correo)) {
+          formMessage.textContent = 'El correo debe ser válido y terminar en @itca.edu.sv.';
+          formMessage.classList.add('error');
+          return;
+        }
+        if (usuario.carnet.length > 40) {
+          formMessage.textContent = 'El carnet o código no debe exceder 40 caracteres.';
           formMessage.classList.add('error');
           return;
         }
 
-        if (!email) {
-          formMessage.textContent = 'El correo institucional es obligatorio.';
-          formMessage.classList.add('error');
-          return;
-        }
-
-        if (emailInput.validity.typeMismatch || !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@itca\.edu\.sv$/i.test(email)) {
-          formMessage.textContent = 'Ingresa un correo válido que termine en @itca.edu.sv.';
-          formMessage.classList.add('error');
-          return;
-        }
-
-        if (!/^\d{6}$/.test(code)) {
-          formMessage.textContent = 'El carnet o código debe contener exactamente 6 dígitos numéricos.';
-          formMessage.classList.add('error');
-          return;
-        }
-
-        formMessage.textContent = `Datos validados correctamente. Estado: ${estado.toLowerCase()}.`;
-        formMessage.classList.add('success');
+        submitButton.disabled = true;
+        fetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(usuario)
+        })
+          .then(async (response) => {
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'No se pudo guardar el usuario.');
+            return result;
+          })
+          .then(async ({ data }) => {
+            form.reset();
+            formMessage.textContent = `Se registró a ${data.nombre}.`;
+            formMessage.classList.add('success');
+            await cargarUsuarios();
+          })
+          .catch((error) => {
+            formMessage.textContent = error instanceof TypeError
+              ? 'No se pudo conectar con el servidor local. Inicia la aplicación con npm start e inténtalo de nuevo.'
+              : error.message;
+            formMessage.classList.add('error');
+          })
+          .finally(() => { submitButton.disabled = false; });
       });
+
+      async function cargarUsuarios() {
+        usersMessage.textContent = 'Cargando registros…';
+        usersMessage.className = 'message';
+        try {
+          const response = await fetch('/api/usuarios');
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los usuarios.');
+
+          usersTableBody.replaceChildren();
+          result.data.forEach((usuario) => {
+            const row = document.createElement('tr');
+            const values = [
+              usuario.nombre,
+              tipoUsuarioNombre.get(usuario.tipo) || usuario.tipo,
+              usuario.carnet || '—',
+              usuario.correo || '—',
+              usuario.estado
+            ];
+            values.forEach((value) => {
+              const cell = document.createElement('td');
+              cell.textContent = value;
+              row.append(cell);
+            });
+            usersTableBody.append(row);
+          });
+          usersMessage.textContent = result.total
+            ? `${result.total} usuario(s) registrado(s).`
+            : 'Todavía no hay usuarios registrados.';
+          usersMessage.className = 'message success';
+        } catch (error) {
+          usersMessage.textContent = error instanceof TypeError
+            ? 'No se pudo conectar con el servidor local.'
+            : error.message;
+          usersMessage.className = 'message error';
+        }
+      }
+
+      async function cargarSesionPersonal() {
+        const response = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result.user || result.user.role !== 'SUPERADMIN') {
+          window.location.replace('/');
+          return false;
+        }
+        document.getElementById('staffName').textContent = result.user.nombre;
+        document.getElementById('staffRole').textContent = 'Superadministrador';
+        document.getElementById('staffUsername').textContent = result.user.username;
+        const initials = result.user.nombre.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('');
+        document.querySelector('.staff-avatar').textContent = initials || 'IT';
+        return true;
+      }
+
+      document.getElementById('reloadUsersButton').addEventListener('click', cargarUsuarios);
+      cargarSesionPersonal()
+        .then((authorized) => { if (authorized) return cargarUsuarios(); })
+        .catch((error) => {
+          usersMessage.textContent = `No se pudo verificar la sesión: ${error.message}`;
+          usersMessage.className = 'message error';
+        });
     </script>
   </body>
 </html>

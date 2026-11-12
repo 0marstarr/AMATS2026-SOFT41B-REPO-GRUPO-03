@@ -1,11 +1,15 @@
 {
   "name": "amats2026-soft41b-repo-grupo-03",
   "version": "1.0.0",
-  "description": "Aplicación HTML + API para pruebas con Postman/JMeter desplegada en Render",
+  "description": "Sistema bibliotecario con almacenamiento SQLite local y PostgreSQL para despliegue",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node --test"
   },
   "keywords": [
     "api",
@@ -17,6 +21,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "pg": "^8.13.1"
   }
 }
