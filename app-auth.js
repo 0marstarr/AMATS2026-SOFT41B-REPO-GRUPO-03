@@ -504,10 +504,6 @@
       const { user: account } = await api('/api/auth/me');
       if (account) {
         startSession(account);
-      } else if (status.setupRequired) {
-        $('#nombreSetup').focus();
-      } else {
-        $('#usuario').focus();
       }
     } catch (error) {
       showSetupMode(false);

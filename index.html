@@ -664,17 +664,18 @@ body{
   }
   #pantallaLogin{isolation:isolate}
   #pantallaLogin .decor{pointer-events:none}
+  #pantallaLogin{background-size:auto;animation:none}
   .tarjeta-login{
     isolation:isolate;
     transition:transform .45s var(--glass-ease),box-shadow .45s ease;
-    animation:loginEnter .82s var(--glass-ease) both,loginFloat 9s ease-in-out 1s infinite;
+    animation:loginEnter .72s var(--glass-ease) both;
   }
   .login-hero{position:relative;isolation:isolate;overflow:hidden}
   .login-hero::after{
     content:"";position:absolute;z-index:0;right:-5.5rem;top:17%;width:15rem;aspect-ratio:1;
     border-radius:50%;pointer-events:none;
     background:radial-gradient(circle,rgba(201,144,43,.27),rgba(255,255,255,.11) 38%,transparent 70%);
-    filter:blur(4px);animation:orbFloat 10s ease-in-out infinite alternate;
+    filter:blur(4px);animation:none;
   }
   .login-hero>*{position:relative;z-index:1}
   .login-hero .marca-login,.login-hero .chip-rol{
@@ -698,8 +699,6 @@ body{
     box-shadow:0 22px 48px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.17);
   }
   [data-bs-theme="dark"] .login-hero::after{background:radial-gradient(circle,rgba(240,183,47,.28),rgba(255,255,255,.08) 38%,transparent 70%)}
-  @keyframes loginFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-  @keyframes orbFloat{from{transform:translate3d(-8px,8px,0) scale(.92)}to{transform:translate3d(8px,-12px,0) scale(1.08)}}
   @keyframes glassSweep{0%,72%,100%{background-position:140% 0}84%{background-position:-80% 0}}
   @media(max-width:991.98px){
     .tarjeta-login{animation:loginEnter .72s var(--glass-ease) both}
@@ -776,7 +775,7 @@ body{
 
           <div id="alertaLogin" class="alert d-none py-2" role="alert"></div>
 
-          <form id="formLogin" autocomplete="off" novalidate>
+          <form id="formLogin" autocomplete="on" novalidate>
             <div class="mb-3 oculto" id="campoNombreSetup">
               <label class="form-label" for="nombreSetup"><i class="bi bi-person-vcard"></i> Nombre de la persona administradora</label>
               <input class="form-control" id="nombreSetup" maxlength="120" autocomplete="name">
@@ -785,14 +784,14 @@ body{
               <label class="form-label" for="usuario"><i class="bi bi-person-badge"></i> Usuario o correo institucional</label>
               <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-person text-muted-2"></i></span>
-                <input class="form-control" id="usuario" placeholder="nombre.apellido" required autocomplete="username">
+                <input class="form-control" id="usuario" name="username" placeholder="nombre.apellido" required autocomplete="username">
               </div>
             </div>
             <div class="mb-3">
               <label class="form-label" for="clave"><i class="bi bi-key"></i> Contraseña</label>
               <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-lock text-muted-2"></i></span>
-                <input type="password" class="form-control" id="clave" placeholder="••••••••••" required autocomplete="current-password">
+                <input type="password" class="form-control" id="clave" name="password" placeholder="••••••••••" required autocomplete="current-password">
                 <button class="btn btn-outline-secondary" type="button" id="verClave" tabindex="-1"><i class="bi bi-eye"></i></button>
               </div>
             </div>
