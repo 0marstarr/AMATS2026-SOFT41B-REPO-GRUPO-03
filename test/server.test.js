@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { after, before, test } = require('node:test');
+const { addBusinessDays } = require('../loan-calendar');
 
 const databasePath = path.join(__dirname, 'server-test-data.sqlite');
 for (const suffix of ['', '-wal', '-shm']) fs.rmSync(`${databasePath}${suffix}`, { force: true });
@@ -145,6 +146,10 @@ test('setup, login, OPAC and role/owner isolation work server-side', async () =>
   assert.equal(librarian.user.role, 'BIBLIOTECARIA');
   assert.equal(librarian.user.nombre, 'Bibliotecaria Actualizada');
   assert.equal((await request('/api/accounts', {}, librarian.cookie)).response.status, 403);
+  const defaultLoanPolicy = await request('/api/config/prestamos', {}, librarian.cookie);
+  assert.equal(defaultLoanPolicy.response.status, 200);
+  assert.equal(defaultLoanPolicy.body.data.dias_habiles, 7);
+  assert.equal((await request('/api/config/prestamos')).response.status, 401);
   const librarianRegistrationPage = await request('/registro-usuarios.html', { redirect: 'manual' }, librarian.cookie);
   assert.equal(librarianRegistrationPage.response.status, 302);
   assert.equal(librarianRegistrationPage.response.headers.get('location'), '/');
@@ -191,6 +196,24 @@ test('setup, login, OPAC and role/owner isolation work server-side', async () =>
   assert.equal(foundReader.body.data.tiene_cuenta, 1);
   assert.equal((await request('/api/lectores/buscar?carnet=missing', {}, librarian.cookie)).response.status, 404);
   assert.equal((await request('/api/lectores/buscar', {}, librarian.cookie)).response.status, 400);
+  const invalidLoanPolicy = await request('/api/config/prestamos', {
+    method: 'PUT', body: { dias_habiles: 91 }
+  }, librarian.cookie);
+  assert.equal(invalidLoanPolicy.response.status, 400);
+  const updatedLoanPolicy = await request('/api/config/prestamos', {
+    method: 'PUT', body: { dias_habiles: 7 }
+  }, librarian.cookie);
+  assert.equal(updatedLoanPolicy.response.status, 200);
+  const loanDate = new Date();
+  const loanDateLocal = `${loanDate.getFullYear()}-${String(loanDate.getMonth() + 1).padStart(2, '0')}-${String(loanDate.getDate()).padStart(2, '0')}`;
+  const holidayDate = addBusinessDays(loanDateLocal, 2);
+  const holiday = await request('/api/feriados', {
+    method: 'POST', body: { fecha: holidayDate, descripcion: 'Feriado de prueba' }
+  }, librarian.cookie);
+  assert.equal(holiday.response.status, 201);
+  assert.equal((await request('/api/feriados', {
+    method: 'POST', body: { fecha: holidayDate, descripcion: 'Duplicado' }
+  }, librarian.cookie)).response.status, 409);
 
   const firstBook = await request('/api/libros', {
     method: 'POST',
@@ -207,6 +230,9 @@ test('setup, login, OPAC and role/owner isolation work server-side', async () =>
     body: { usuario_id: firstReaderAccount.body.user.reader_id, libro_id: firstBook.body.data.id }
   }, librarian.cookie);
   assert.equal(firstLoan.response.status, 201);
+  assert.equal(firstLoan.body.data.fecha_limite, addBusinessDays(loanDateLocal, 7, new Set([holidayDate])));
+  assert.equal((await request(`/api/feriados/${holidayDate}`, { method: 'DELETE' }, librarian.cookie)).response.status, 200);
+  assert.equal((await request('/api/feriados', {}, librarian.cookie)).body.total, 0);
   const secondLoan = await request('/api/prestamos', {
     method: 'POST',
     body: { usuario_id: secondReaderAccount.body.user.reader_id, libro_id: availableBook.body.data.id }
@@ -231,6 +257,8 @@ test('setup, login, OPAC and role/owner isolation work server-side', async () =>
   const reader = await login('reader.one', 'reader-one-password');
   assert.equal(reader.user.role, 'PRESTATARIO');
   assert.equal(reader.user.reader_id, firstReaderAccount.body.user.reader_id);
+  assert.equal((await request('/api/config/prestamos', {}, reader.cookie)).response.status, 403);
+  assert.equal((await request('/api/feriados', {}, reader.cookie)).response.status, 403);
   const readerRegistrationPage = await request('/registro-usuarios.html', { redirect: 'manual' }, reader.cookie);
   assert.equal(readerRegistrationPage.response.status, 302);
   assert.equal((await request('/api/accounts', {

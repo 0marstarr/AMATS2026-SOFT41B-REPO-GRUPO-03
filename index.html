@@ -852,6 +852,7 @@ body{
       <a class="nav-side" data-vista="catalogo" data-roles="SUPERADMIN,BIBLIOTECARIA"><i class="bi bi-journal-bookmark"></i> Catálogo</a>
       <a class="nav-side" data-vista="prestamos" data-roles="SUPERADMIN,BIBLIOTECARIA"><i class="bi bi-box-arrow-up-right"></i> Préstamos</a>
       <a class="nav-side" data-vista="devoluciones" data-roles="SUPERADMIN,BIBLIOTECARIA"><i class="bi bi-box-arrow-in-down-left"></i> Devoluciones</a>
+      <a class="nav-side" data-vista="politicas" data-roles="SUPERADMIN,BIBLIOTECARIA"><i class="bi bi-calendar2-week"></i> Plazos y feriados</a>
       <div class="titulo-nav" data-roles="SUPERADMIN,BIBLIOTECARIA,PRESTATARIO">Control y comunidad</div>
       <a class="nav-side" data-vista="mora" data-roles="SUPERADMIN,BIBLIOTECARIA"><i class="bi bi-exclamation-triangle"></i> Alertas de mora <span class="contador oculto" id="contadorMoraMenu2">0</span></a>
       <a class="nav-side" data-vista="misPrestamos" data-roles="PRESTATARIO"><i class="bi bi-journal-check"></i> Mis préstamos y mora</a>
@@ -1270,7 +1271,7 @@ function cargarSemilla(mostrarAviso) {
   const moraBase = [
     [1,17,5,3,'Mora Reciente',-27,'Pagada',45,'Devolución tardía liquidada en ventanilla.'],
     [2,19,3,1,'Mora Reciente',-31,'Pendiente',15,'Sanción pendiente de pago.'],
-    [3,1,1,5,'Mora Crítica',0,'Pendiente',75,'Detección automática: préstamo activo vencido 7 días calendario.'],
+    [3,1,1,5,'Mora Crítica',0,'Pendiente',75,'La mora se calcula en días hábiles después de la fecha límite.'],
     [4,4,3,13,'Mora Crítica',0,'Pendiente',195,'Detección automática: lector suspendido por mora crítica (HU-07).'],
     [5,5,5,2,'Mora Reciente',0,'Pendiente',30,'Detección automática: mora reciente (semáforo naranja).'],
     [6,11,4,3,'Mora Reciente',0,'Pendiente',45,'Detección automática: lector suspendido por mora crítica (HU-07).']
@@ -1662,6 +1663,7 @@ const PERMISOS = {
   dashboard: ['SUPERADMIN', 'BIBLIOTECARIA'], opac: ['SUPERADMIN', 'BIBLIOTECARIA', 'PRESTATARIO', 'OPAC'],
   catalogo: ['SUPERADMIN', 'BIBLIOTECARIA'], prestamos: ['SUPERADMIN', 'BIBLIOTECARIA'],
   devoluciones: ['SUPERADMIN', 'BIBLIOTECARIA'], mora: ['SUPERADMIN', 'BIBLIOTECARIA'],
+  politicas: ['SUPERADMIN', 'BIBLIOTECARIA'],
   misPrestamos: ['PRESTATARIO'],
   reportes: ['SUPERADMIN', 'BIBLIOTECARIA'], auditoria: ['SUPERADMIN'], config: ['SUPERADMIN'],
   acerca: ['SUPERADMIN', 'BIBLIOTECARIA', 'PRESTATARIO', 'OPAC']

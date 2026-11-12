@@ -74,6 +74,15 @@ const sqliteSchema = `
     estado TEXT NOT NULL CHECK (estado IN ('Pendiente (demo)','Sin contacto')),
     creado_en TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
   );
+  CREATE TABLE IF NOT EXISTS ConfiguracionPrestamo (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    dias_habiles INTEGER NOT NULL DEFAULT 7 CHECK (dias_habiles BETWEEN 1 AND 90)
+  );
+  INSERT OR IGNORE INTO ConfiguracionPrestamo (id, dias_habiles) VALUES (1, 7);
+  CREATE TABLE IF NOT EXISTS Feriados (
+    fecha TEXT PRIMARY KEY,
+    descripcion TEXT NOT NULL CHECK (length(trim(descripcion)) BETWEEN 1 AND 120)
+  );
 `;
 
 const postgresSchema = `
@@ -140,6 +149,16 @@ const postgresSchema = `
     mensaje TEXT NOT NULL,
     estado TEXT NOT NULL CHECK (estado IN ('Pendiente (demo)','Sin contacto')),
     creado_en TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+  );
+  CREATE TABLE IF NOT EXISTS configuracionprestamo (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    dias_habiles INTEGER NOT NULL DEFAULT 7 CHECK (dias_habiles BETWEEN 1 AND 90)
+  );
+  INSERT INTO configuracionprestamo (id, dias_habiles) VALUES (1, 7)
+    ON CONFLICT (id) DO NOTHING;
+  CREATE TABLE IF NOT EXISTS feriados (
+    fecha DATE PRIMARY KEY,
+    descripcion TEXT NOT NULL CHECK (length(trim(descripcion)) BETWEEN 1 AND 120)
   );
 `;
 

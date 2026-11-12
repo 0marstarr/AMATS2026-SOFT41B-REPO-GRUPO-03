@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const crypto = require('node:crypto');
 const { db, dbReady, isPostgres } = require('./database');
+const { addBusinessDays, countLateBusinessDays } = require('./loan-calendar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -125,6 +126,7 @@ function allowRoles(...roles) {
 }
 
 const staffRoles = ['SUPERADMIN', 'BIBLIOTECARIA'];
+const isoDateValue = (value) => value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
 
 app.get('/registro-usuarios.html', optionalAuthenticate, (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -393,6 +395,64 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+app.get('/api/config/prestamos', authenticate, allowRoles(...staffRoles), async (req, res) => {
+  const configuracion = await db.get('SELECT dias_habiles FROM ConfiguracionPrestamo WHERE id = 1');
+  return res.json({ ok: true, data: { dias_habiles: Number(configuracion.dias_habiles) } });
+});
+
+app.put('/api/config/prestamos', authenticate, allowRoles(...staffRoles), async (req, res) => {
+  const days = Number(req.body?.dias_habiles);
+  if (!Number.isInteger(days) || days < 1 || days > 90) {
+    return res.status(400).json({ ok: false, message: 'El plazo debe ser un número entero entre 1 y 90 días hábiles' });
+  }
+  await db.run('UPDATE ConfiguracionPrestamo SET dias_habiles = ? WHERE id = 1', days);
+  return res.json({ ok: true, data: { dias_habiles: days } });
+});
+
+app.get('/api/feriados', authenticate, allowRoles(...staffRoles), async (req, res) => {
+  const data = await db.all('SELECT fecha, descripcion FROM Feriados ORDER BY fecha');
+  return res.json({ ok: true, total: data.length, data: data.map((holiday) => ({ ...holiday, fecha: isoDateValue(holiday.fecha) })) });
+});
+
+app.post('/api/feriados', authenticate, allowRoles(...staffRoles), async (req, res) => {
+  const date = typeof req.body?.fecha === 'string' ? req.body.fecha : '';
+  const description = typeof req.body?.descripcion === 'string' ? req.body.descripcion.trim() : '';
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ ok: false, message: 'Seleccione una fecha válida' });
+    }
+  } catch {
+    return res.status(400).json({ ok: false, message: 'Seleccione una fecha válida' });
+  }
+  if (!description || description.length > 120) {
+    return res.status(400).json({ ok: false, message: 'La descripción debe tener entre 1 y 120 caracteres' });
+  }
+  try {
+    await db.run('INSERT INTO Feriados (fecha, descripcion) VALUES (?, ?)', date, description);
+  } catch (error) {
+    if (db.isUniqueViolation(error)) {
+      return res.status(409).json({ ok: false, message: 'Ya existe un feriado registrado para esa fecha' });
+    }
+    console.error('Error al registrar feriado:', error);
+    return res.status(500).json({ ok: false, message: 'No se pudo guardar el feriado' });
+  }
+  return res.status(201).json({ ok: true, data: { fecha: date, descripcion: description } });
+});
+
+app.delete('/api/feriados/:fecha', authenticate, allowRoles(...staffRoles), async (req, res) => {
+  const date = req.params.fecha;
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ ok: false, message: 'Seleccione una fecha válida' });
+    }
+  } catch {
+    return res.status(400).json({ ok: false, message: 'Seleccione una fecha válida' });
+  }
+  const result = await db.run('DELETE FROM Feriados WHERE fecha = ?', date);
+  if (result.changes === 0) return res.status(404).json({ ok: false, message: 'No se encontró el feriado' });
+  return res.json({ ok: true });
+});
+
 async function listarUsuarios(req, res) {
   const data = await db.all(`
     SELECT id, nombre, carnet, correo, telefono, tipo, estado, creado_en
@@ -543,6 +603,7 @@ app.post('/api/libros', authenticate, allowRoles(...staffRoles), async (req, res
 
 async function actualizarNotificacionesMora() {
   const hoy = fechaLocal();
+  const holidays = new Set((await db.all('SELECT fecha FROM Feriados')).map(({ fecha }) => isoDateValue(fecha)));
   const vencidos = await db.all(`
     SELECT p.id, p.fecha_limite, u.correo, u.telefono
     FROM Prestamos p
@@ -551,7 +612,8 @@ async function actualizarNotificacionesMora() {
   `, hoy);
 
   for (const prestamo of vencidos) {
-    const diasMora = Math.floor((Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${prestamo.fecha_limite}T00:00:00Z`)) / 86400000);
+    const diasMora = countLateBusinessDays(prestamo.fecha_limite, hoy, holidays);
+    if (diasMora === 0) continue;
     const canal = prestamo.correo ? 'correo' : prestamo.telefono ? 'telefono' : 'sin_contacto';
     const destino = canal === 'correo' ? prestamo.correo : canal === 'telefono' ? prestamo.telefono : null;
     const mensaje = `El préstamo ${prestamo.id} venció el ${prestamo.fecha_limite}. Días de mora: ${diasMora}.`;
@@ -564,6 +626,7 @@ async function actualizarNotificacionesMora() {
 
 async function listarPrestamos(req, res) {
   await actualizarNotificacionesMora();
+  const holidays = new Set((await db.all('SELECT fecha FROM Feriados')).map(({ fecha }) => isoDateValue(fecha)));
   const data = await db.all(`
     SELECT p.id, p.usuario_id, p.libro_id, p.fecha_prestamo, p.fecha_limite,
       p.fecha_devolucion, p.estado, u.nombre AS usuario, u.carnet, u.correo,
@@ -574,10 +637,12 @@ async function listarPrestamos(req, res) {
     ${req.account.role === 'PRESTATARIO' ? 'WHERE p.usuario_id = ?' : ''}
     ORDER BY p.id DESC
   `, ...(req.account.role === 'PRESTATARIO' ? [req.account.reader_id] : []));
-  const hoyUtc = Date.parse(`${fechaLocal()}T00:00:00Z`);
   for (const prestamo of data) {
-    if (prestamo.estado === 'Activo' && prestamo.fecha_limite < fechaLocal()) {
-      prestamo.dias_mora = Math.floor((hoyUtc - Date.parse(`${prestamo.fecha_limite}T00:00:00Z`)) / 86400000);
+    prestamo.fecha_limite = isoDateValue(prestamo.fecha_limite);
+    prestamo.fecha_prestamo = isoDateValue(prestamo.fecha_prestamo);
+    if (prestamo.fecha_devolucion) prestamo.fecha_devolucion = isoDateValue(prestamo.fecha_devolucion);
+    if (prestamo.estado === 'Activo') {
+      prestamo.dias_mora = countLateBusinessDays(prestamo.fecha_limite, fechaLocal(), holidays);
     }
   }
   res.json({ ok: true, total: data.length, data });
@@ -595,10 +660,13 @@ app.post('/api/prestamos', authenticate, allowRoles(...staffRoles), async (req, 
     return res.status(400).json({ ok: false, message: 'Seleccione un libro activo válido' });
   }
 
-  const fechaPrestamo = new Date(`${fechaLocal()}T00:00:00`);
-  const fechaPrestamoUtc = new Date(Date.UTC(fechaPrestamo.getFullYear(), fechaPrestamo.getMonth(), fechaPrestamo.getDate()));
-  const fechaLimite = new Date(fechaPrestamoUtc);
-  fechaLimite.setUTCDate(fechaLimite.getUTCDate() + 7);
+  const [configuracion, holidayRows] = await Promise.all([
+    db.get('SELECT dias_habiles FROM ConfiguracionPrestamo WHERE id = 1'),
+    db.all('SELECT fecha FROM Feriados')
+  ]);
+  const holidays = new Set(holidayRows.map(({ fecha }) => isoDateValue(fecha)));
+  const fechaPrestamo = fechaLocal();
+  const fechaLimite = addBusinessDays(fechaPrestamo, Number(configuracion.dias_habiles), holidays);
   const result = await db.transaction(async (tx) => {
     const libro = await tx.get(
       `SELECT id, copias_totales, estado FROM Libros WHERE id = ?${isPostgres ? ' FOR UPDATE' : ''}`,
@@ -613,7 +681,7 @@ app.post('/api/prestamos', authenticate, allowRoles(...staffRoles), async (req, 
     const inserted = await tx.run(`
       INSERT INTO Prestamos (usuario_id, libro_id, fecha_prestamo, fecha_limite, estado)
       VALUES (?, ?, ?, ?, 'Activo') RETURNING id
-    `, usuarioId, libroId, fechaLocal(), fechaLimite.toISOString().slice(0, 10));
+    `, usuarioId, libroId, fechaPrestamo, fechaLimite);
     return { id: inserted.lastInsertRowid };
   });
   if (result.error === 'invalid-book') {
@@ -632,7 +700,8 @@ app.post('/api/prestamos/:id/devolucion', authenticate, allowRoles(...staffRoles
   if (!prestamo) return res.status(404).json({ ok: false, message: 'Préstamo no encontrado' });
   if (prestamo.estado !== 'Activo') return res.status(409).json({ ok: false, message: 'El préstamo ya fue devuelto' });
   const hoy = fechaLocal();
-  const diasMora = Math.max(0, Math.floor((Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${prestamo.fecha_limite}T00:00:00Z`)) / 86400000));
+  const holidays = new Set((await db.all('SELECT fecha FROM Feriados')).map(({ fecha }) => isoDateValue(fecha)));
+  const diasMora = countLateBusinessDays(prestamo.fecha_limite, hoy, holidays);
   const result = await db.run("UPDATE Prestamos SET estado = 'Devuelto', fecha_devolucion = ?, dias_mora = ? WHERE id = ? AND estado = 'Activo'",
     hoy, diasMora, prestamo.id);
   if (result.changes !== 1) return res.status(409).json({ ok: false, message: 'El estado del préstamo cambió; actualice la lista' });

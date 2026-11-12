@@ -143,6 +143,7 @@
       catalogo: ['Catálogo Bibliográfico', 'Inventario registrado en la biblioteca'],
       prestamos: ['Préstamos', 'Circulación y registro de préstamos'],
       devoluciones: ['Devoluciones', 'Cierre de préstamos activos'],
+      politicas: ['Plazos y feriados', 'Configuración de días hábiles para préstamos'],
       mora: ['Control y Alertas de Mora', 'Préstamos vencidos y días de atraso'],
       misPrestamos: ['Mis préstamos y mora', 'Consulta privada asociada a su cuenta'],
       reportes: ['Reportes Estadísticos', 'Resumen de los datos registrados'],
@@ -294,6 +295,34 @@
           'Aún no hay cuentas de bibliotecaria.'
         ))}`;
     }
+    if (view === 'politicas') {
+      const [{ data: policy }, { data: holidays }] = await Promise.all([
+        api('/api/config/prestamos'),
+        api('/api/feriados')
+      ]);
+      return `<div class="row g-3">
+        <div class="col-12">${card('Duración del préstamo', 'bi-calendar2-check', `
+          <form data-form="loan-policy" class="row g-3 align-items-end">
+            <div class="col-md-5"><label class="form-label" for="loanBusinessDays">Días hábiles de préstamo</label>
+              <input class="form-control" id="loanBusinessDays" name="dias_habiles" type="number" min="1" max="90" step="1" value="${esc(policy.dias_habiles)}" required></div>
+            <div class="col-md-7"><button class="btn btn-primary" type="submit"><i class="bi bi-save me-1"></i>Guardar plazo</button></div>
+            <div class="col-12 text-muted-2 small">Sábados, domingos y los feriados de la lista no cuentan. El nuevo plazo se aplica a los préstamos creados después del cambio; los préstamos existentes conservan su fecha límite.</div>
+          </form>
+        `)}</div>
+        <div class="col-12">${card('Feriados y días no laborables', 'bi-calendar-x', `
+          <form data-form="holiday" class="row g-3 align-items-end mb-3">
+            <div class="col-md-4"><label class="form-label" for="holidayDate">Fecha</label><input class="form-control" id="holidayDate" name="fecha" type="date" required></div>
+            <div class="col-md-6"><label class="form-label" for="holidayDescription">Descripción</label><input class="form-control" id="holidayDescription" name="descripcion" maxlength="120" placeholder="Ej. Feriado nacional" required></div>
+            <div class="col-md-2 d-grid"><button class="btn btn-outline-primary" type="submit"><i class="bi bi-plus-lg me-1"></i>Agregar</button></div>
+          </form>
+          ${table(
+            ['Fecha', 'Descripción', 'Acción'],
+            holidays.map(holiday => `<tr><td>${esc(holiday.fecha)}</td><td>${esc(holiday.descripcion)}</td><td><button class="btn btn-sm btn-outline-danger" type="button" data-delete-holiday="${esc(holiday.fecha)}" aria-label="Eliminar feriado ${esc(holiday.fecha)}"><i class="bi bi-trash3"></i></button></td></tr>`),
+            'No hay feriados registrados. Los fines de semana siempre se excluyen.'
+          )}
+        `)}</div>
+      </div>`;
+    }
     if (view === 'auditoria') {
       return card('Auditoría', 'bi-shield-check', '<div class="alert alert-info mb-0">La API actual no expone un registro de auditoría consultable. No se muestran datos de demostración.</div>');
     }
@@ -362,6 +391,15 @@
       } else if (form.dataset.form === 'book') {
         const values = Object.fromEntries(new FormData(form).entries());
         await api('/api/libros', { method: 'POST', body: JSON.stringify(values) });
+      } else if (form.dataset.form === 'loan-policy') {
+        const values = Object.fromEntries(new FormData(form).entries());
+        await api('/api/config/prestamos', {
+          method: 'PUT',
+          body: JSON.stringify({ dias_habiles: Number(values.dias_habiles) })
+        });
+      } else if (form.dataset.form === 'holiday') {
+        const values = Object.fromEntries(new FormData(form).entries());
+        await api('/api/feriados', { method: 'POST', body: JSON.stringify(values) });
       }
       toast('Los cambios se guardaron correctamente.', 'success');
       await openView(vistaActual);
@@ -385,6 +423,19 @@
       });
     });
     $('#vistaContenedor').addEventListener('click', async event => {
+      const deleteHolidayButton = event.target.closest('[data-delete-holiday]');
+      if (deleteHolidayButton) {
+        deleteHolidayButton.disabled = true;
+        try {
+          await api(`/api/feriados/${encodeURIComponent(deleteHolidayButton.dataset.deleteHoliday)}`, { method: 'DELETE' });
+          toast('Feriado eliminado.', 'success');
+          await openView('politicas');
+        } catch (error) {
+          deleteHolidayButton.disabled = false;
+          toast(esc(error.message), 'danger', 'No se pudo eliminar el feriado');
+        }
+        return;
+      }
       const lookupButton = event.target.closest('[data-action="lookup-reader"]');
       if (lookupButton) {
         const form = lookupButton.closest('form[data-form="loan"]');
